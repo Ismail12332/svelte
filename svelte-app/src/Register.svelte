@@ -7,24 +7,26 @@
         dispatch("close");
     }
 </script>
+<body>
+    
 
-<div class="modal">
-    <h1>Register</h1>
-    <form method="POST" action="/register">
-        <label for="username">Name:</label>
-        <input type="text" id="username" name="username" required /><br />
+    <div class="modal">
+        <h1>Register</h1>
+        <form method="POST" action="/register">
+            <label for="username">Name:</label>
+            <input type="text" id="username" name="username" required /><br />
 
-        <label for="password">password:</label>
-        <input type="password" id="password" name="password" required /><br />
+            <label for="password">password:</label>
+            <input type="password" id="password" name="password" required /><br />
 
-        <label for="email">Email:</label>
-        <input type="email" id="email" name="email" required /><br />
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required /><br />
 
-        <button type="submit">Register</button>
-    </form>
-    <button on:click={close}>Close</button>
-</div>
-
+            <button type="submit">Register</button>
+        </form>
+        <button on:click={close}>Close</button>
+    </div>
+</body>
 <style>
     .modal {
         padding: 1rem;
@@ -47,5 +49,34 @@
     box-sizing: border-box;
     border: 1px solid #ccc;
     border-radius: 2px;
-}
+    }
+
+    body {
+	color: #333;
+	margin: 0;
+	padding: 8px;
+	box-sizing: border-box;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    }
+
+    body {
+	position: relative;
+	width: 100%;
+	height: 100%;
+    }
+
+    input:disabled {
+    color: #ccc;
+    }
+
+    button {
+    color: #333;
+    background-color: #f4f4f4;
+    outline: none;
+    }
+    
+    label {
+	display: block;
+    }
+
 </style>

@@ -28,7 +28,8 @@
     <title>Вход</title>
 </head>
 <body>
-    <h1>Вход</h1>
+    <h1>Survzila</h1>
+    <h1>Please</h1>
     <form method="POST" action="/">
         <label for="username">Name:</label>
         <input type="text" id="username" name="username" required /><br />
@@ -41,6 +42,14 @@
 </body>
 
 <style>
+    h1 {
+	color: #ff3e00;
+	text-transform: uppercase;
+	font-size: 4em;
+	font-weight: 100;
+    margin: 20px;
+    }
+
     input, button {
     font-family: inherit;
     font-size: inherit;
@@ -50,5 +59,24 @@
     box-sizing: border-box;
     border: 1px solid #ccc;
     border-radius: 2px;
-}
+    }
+
+    body {
+	color: #333;
+	margin: 0;
+	padding: 8px;
+	box-sizing: border-box;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    }
+
+    body {
+	position: relative;
+	width: 100%;
+	height: 100%;
+    }
+    
+    label {
+	display: block;
+    }
+
 </style>
