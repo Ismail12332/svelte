@@ -4,6 +4,7 @@ from passlib.hash import bcrypt
 from bson import ObjectId
 from datetime import datetime
 from dotenv import load_dotenv
+from flask_cors import CORS
 from werkzeug.utils import secure_filename 
 
 load_dotenv()
@@ -18,6 +19,7 @@ def create_app():
 
 
     app = Flask(__name__, template_folder='templates')
+    CORS(app)
     app.secret_key = "Jebn^$gdYGTHudjy%"
     client = MongoClient("mongodb://localhost:27017")
     app.db = client.my_database
@@ -36,9 +38,9 @@ def create_app():
             if user and bcrypt.verify(password, user["password_hash"]):
                 session["user_id"] = str(user["_id"])
                 print("User ID in session:", session["user_id"])
-                return redirect(url_for("home"))
+                return "Success"  # Возвращаем успешный ответ
 
-            return "Неправильное имя пользователя или пароль."
+            return "Incorrect username or password."
 
         return render_template("login.html")
 

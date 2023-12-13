@@ -1,45 +1,45 @@
 <script>
-    let username = "";
-    let password = "";
+    import { onMount } from 'svelte';
 
-    const handleSubmit = async () => {
-        // Handle login logic here
-        const response = await fetch("/login", {
-            method: "POST",
+    let username = '';
+    let password = '';
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+
+        const response = await fetch('http://127.0.0.1:5000/', {
+            method: 'POST',
             headers: {
-                "Content-Type": "application/json",
+                'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: JSON.stringify({ username, password }),
+            body: new URLSearchParams({ username, password }),
         });
 
-        // Handle the response, e.g., redirect on success
-        if (response.ok) {
-            window.location.href = "/index2";
-        } else {
-            alert("Invalid username or password");
-        }
+        const result = await response.text();
+        console.log(result);
     };
 </script>
-
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Вход</title>
 </head>
+
 <body>
     <h1>Survzila</h1>
     <h1>Please</h1>
-    <form method="POST" action="/">
+    <form on:submit={handleSubmit}>
         <label for="username">Name:</label>
-        <input type="text" id="username" name="username" required /><br />
+        <input type="text" id="username" name="username" bind:value={username} required /><br />
 
         <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required /><br />
+        <input type="password" id="password" name="password" bind:value={password} required /><br />
 
         <button type="submit">Sign in</button>
     </form>
 </body>
+
 
 <style>
     h1 {
