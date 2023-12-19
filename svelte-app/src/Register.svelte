@@ -59,11 +59,6 @@
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
     }
 
-    body {
-	position: relative;
-	width: 100%;
-	height: 100%;
-    }
 
     input:disabled {
     color: #ccc;
