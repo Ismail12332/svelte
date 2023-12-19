@@ -1,10 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session,jsonify
 from pymongo import MongoClient
 from passlib.hash import bcrypt
 from bson import ObjectId
 from datetime import datetime
 from dotenv import load_dotenv
-from flask_cors import CORS
+from flask_cors import CORS,cross_origin
 from werkzeug.utils import secure_filename 
 
 load_dotenv()
@@ -19,7 +19,7 @@ def create_app():
 
 
     app = Flask(__name__, template_folder='templates')
-    CORS(app)
+    CORS(app, supports_credentials=True)
     app.secret_key = "Jebn^$gdYGTHudjy%"
     client = MongoClient("mongodb://localhost:27017")
     app.db = client.my_database
@@ -28,7 +28,7 @@ def create_app():
 
 
     @app.route("/", methods=["GET", "POST"])
-    def login():
+    def login(supports_credentials=True):
         if request.method == "POST":
             username = request.form.get("username")
             password = request.form.get("password")
@@ -38,9 +38,10 @@ def create_app():
             if user and bcrypt.verify(password, user["password_hash"]):
                 session["user_id"] = str(user["_id"])
                 print("User ID in session:", session["user_id"])
-                return "Success"  # Возвращаем успешный ответ
+                print({'status': 'success', 'user_id': str(user["_id"])})
+                return jsonify({'status': 'success', 'user_id': str(user["_id"])})  # Возвращаем JSON-ответ
 
-            return "Incorrect username or password."
+            return jsonify({'status': 'error', 'message': 'Incorrect username or password.'}), 401  # Возвращаем JSON-ответ
 
         return render_template("login.html")
 
@@ -51,37 +52,44 @@ def create_app():
         session.pop("user_id", None)
         return redirect(url_for("login"))
 
-    @app.route("/register", methods=["GET", "POST"])
+    @app.route("/register", methods=["POST"])
     def register():
-        if request.method == "POST":
-            username = request.form.get("username")
-            password = request.form.get("password")
-            email = request.form.get("email")
+        data = request.json  # Получаем данные из JSON-запроса
+        username = data.get("username")
+        password = data.get("password")
+        email = data.get("email")
 
-            # Проверка, что пользователь с таким именем уже не существует
-            if users_collection.find_one({"username": username}):
-                return "Пользователь с таким именем уже существует."
+        # Проверка, что пользователь с таким именем уже не существует
+        if users_collection.find_one({"username": username}):
+            return "Пользователь с таким именем уже существует.", 400
 
-            # Создание нового пользователя и сохранение его в базе данных
-            new_user = User(username, password, email)
-            users_collection.insert_one({
-                "username": new_user.username,
-                "password_hash": new_user.password_hash,
-                "email": new_user.email
-            })
+        # Создание нового пользователя и сохранение его в базе данных
+        new_user = User(username, password, email)
+        users_collection.insert_one({
+            "username": new_user.username,
+            "password_hash": new_user.password_hash,
+            "email": new_user.email
+        })
 
-            return render_template("login.html")
+        return "Регистрация прошла успешно.", 200
+    
 
-        return render_template("register.html")
+    @app.route('/check-session', methods=["OPTIONS",'GET'])
+    @cross_origin(supports_credentials=True)
+    def check_session():
+        user_id = session.get('user_id')
+        if user_id:
+            return jsonify({'status': 'success', 'user_id': str(user_id)})
+        else:
+            return jsonify({'status': 'error', 'message': 'User not authenticated'}), 401
 
 
     @app.route("/index2", methods=["GET", "POST"])
-    def home():
+    def home(supports_credentials=True):
         user_id = session.get("user_id")
+        print(user_id)
         
-        # Проверяем, что пользователь вошел в систему
-        if user_id is None:
-            return redirect(url_for("login"))
+        
 
         # Обновляем запрос к базе данных, чтобы фильтровать проекты по user_id
         projects = app.db.projects.find({"user_id": ObjectId(user_id)})
@@ -97,7 +105,7 @@ def create_app():
             try:
                 user_id = ObjectId(user_id)
             except Exception as e:
-                return "Invalid user_id", 400
+                return jsonify({"status": "error", "message": str(e)}), 500
 
             # Создаем проект
             project = {
@@ -116,10 +124,13 @@ def create_app():
             project_id = result.inserted_id
 
             print("Entry added:", first_name, last_name, city, phone, post, vessel_name)
-            return redirect(url_for('edit_project', project_id=project_id))
+            return jsonify({"status": "success", "user_id": user_id, "project_id": str(project_id)})
         
+        # Преобразуем объекты projects в список для возврата на клиент
+        projects_list = list(projects)
+        print({"status": "success", "user_id": user_id, "projects": projects_list})
+        return jsonify({"status": "success", "user_id": user_id, "projects": projects_list})
 
-        return render_template("index2.html", projects=projects, user_id=user_id)
 
 
 

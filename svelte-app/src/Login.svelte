@@ -1,5 +1,14 @@
 <script>
-    import { onMount } from 'svelte';
+    import { createEventDispatcher } from "svelte";
+    import { onMount } from "svelte";
+
+    const dispatch = createEventDispatcher();
+
+    export let onLoginSuccess; 
+
+    function close() {
+    dispatch("close");
+    }
 
     let username = '';
     let password = '';
@@ -9,14 +18,29 @@
 
         const response = await fetch('http://127.0.0.1:5000/', {
             method: 'POST',
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: new URLSearchParams({ username, password }),
+            body: new URLSearchParams({
+                username,
+                password
+            }),
         });
 
-        const result = await response.text();
-        console.log(result);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.status === 'success') {
+                // Успешный вход
+                console.log('Authentication successful');
+                // Вызываем переданную функцию при успешной аутентификации
+                onLoginSuccess();
+            } else {
+                console.error('Incorrect username or password.');
+            }
+        } else {
+            console.error('Failed to authenticate.');
+        }
     };
 </script>
 
@@ -70,7 +94,6 @@
     }
 
     body {
-	position: relative;
 	width: 100%;
 	height: 100%;
     }
