@@ -5,7 +5,8 @@ from bson import ObjectId
 from datetime import datetime
 from dotenv import load_dotenv
 from flask_cors import CORS,cross_origin
-from werkzeug.utils import secure_filename 
+from werkzeug.utils import secure_filename
+import secrets
 
 load_dotenv()
 
@@ -20,7 +21,7 @@ def create_app():
 
     app = Flask(__name__, template_folder='templates')
     CORS(app, supports_credentials=True)
-    app.secret_key = "Jebn^$gdYGTHudjy%"
+    app.secret_key = secrets.token_hex(32)
     client = MongoClient("mongodb://localhost:27017")
     app.db = client.my_database
     users_collection = app.db.users
@@ -30,16 +31,17 @@ def create_app():
     @app.route("/", methods=["GET", "POST"])
     def login(supports_credentials=True):
         if request.method == "POST":
-            username = request.form.get("username")
-            password = request.form.get("password")
+            data = request.json
+            username = data.get("username")
+            password = data.get("password")
 
             user = users_collection.find_one({"username": username})
 
+            
             if user and bcrypt.verify(password, user["password_hash"]):
-                session["user_id"] = str(user["_id"])
-                print("User ID in session:", session["user_id"])
+                user_id = user["user_id"]
                 print({'status': 'success', 'user_id': str(user["_id"])})
-                return jsonify({'status': 'success', 'user_id': str(user["_id"])})  # Возвращаем JSON-ответ
+                return jsonify({'status': 'success', 'user_id': str(user_id)})  # Возвращаем JSON-ответ
 
             return jsonify({'status': 'error', 'message': 'Incorrect username or password.'}), 401  # Возвращаем JSON-ответ
 
@@ -64,48 +66,36 @@ def create_app():
             return "Пользователь с таким именем уже существует.", 400
 
         # Создание нового пользователя и сохранение его в базе данных
+        user_id = secrets.token_urlsafe(16)  # Generate a random user_id
         new_user = User(username, password, email)
         users_collection.insert_one({
+            "user_id": user_id,
             "username": new_user.username,
             "password_hash": new_user.password_hash,
             "email": new_user.email
         })
 
         return "Регистрация прошла успешно.", 200
-    
-
-    @app.route('/check-session', methods=["OPTIONS",'GET'])
-    @cross_origin(supports_credentials=True)
-    def check_session():
-        user_id = session.get('user_id')
-        if user_id:
-            return jsonify({'status': 'success', 'user_id': str(user_id)})
-        else:
-            return jsonify({'status': 'error', 'message': 'User not authenticated'}), 401
 
 
     @app.route("/index2", methods=["GET", "POST"])
     def home(supports_credentials=True):
-        user_id = session.get("user_id")
-        print(user_id)
-        
-        
+        data = request.json  # Получаем данные из JSON-запроса
+        user_id = request.args.get("user_id")
 
         # Обновляем запрос к базе данных, чтобы фильтровать проекты по user_id
-        projects = app.db.projects.find({"user_id": ObjectId(user_id)})
+        projects = app.db.projects.find({"user_id": user_id})
 
         if request.method == "POST":
-            first_name = request.form.get("first_name")
-            last_name = request.form.get("last_name")
-            city = request.form.get("city")
-            phone = request.form.get("phone")
-            post = request.form.get("post")
-            vessel_name = request.form.get("vessel_name")
+            user_id = data.get("user_id")
+            first_name = data.get("first_name")
+            last_name = data.get("last_name")
+            city = data.get("city")
+            phone = data.get("phone")
+            post = data.get("post")
+            vessel_name = data.get("vessel_name")
             
-            try:
-                user_id = ObjectId(user_id)
-            except Exception as e:
-                return jsonify({"status": "error", "message": str(e)}), 500
+            
 
             # Создаем проект
             project = {
@@ -123,13 +113,13 @@ def create_app():
             result = app.db.projects.insert_one(project)
             project_id = result.inserted_id
 
-            print("Entry added:", first_name, last_name, city, phone, post, vessel_name)
-            return jsonify({"status": "success", "user_id": user_id, "project_id": str(project_id)})
+            print("Entry added:", first_name, last_name, city, phone, post, vessel_name, user_id)
+            return jsonify({"status": "success", "user_id": str(user_id), "project_id": str(project_id)})
         
         # Преобразуем объекты projects в список для возврата на клиент
         projects_list = list(projects)
         print({"status": "success", "user_id": user_id, "projects": projects_list})
-        return jsonify({"status": "success", "user_id": user_id, "projects": projects_list})
+        return jsonify({"status": "success", "user_id": str(user_id), "projects": projects_list})
 
 
 

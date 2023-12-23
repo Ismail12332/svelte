@@ -1,10 +1,11 @@
 <script>
     import { createEventDispatcher } from "svelte";
     import { onMount } from "svelte";
+    import { navigate } from "svelte-navigator";
+    import Register from "./Register.svelte";
 
     const dispatch = createEventDispatcher();
-
-    export let onLoginSuccess; 
+    let showModal = false
 
     function close() {
     dispatch("close");
@@ -18,23 +19,25 @@
 
         const response = await fetch('http://127.0.0.1:5000/', {
             method: 'POST',
-            credentials: 'include',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
+                'Content-Type': 'application/json',
             },
-            body: new URLSearchParams({
+            body: JSON.stringify({
                 username,
-                password
+                password,
             }),
         });
 
         if (response.ok) {
             const data = await response.json();
             if (data.status === 'success') {
-                // Успешный вход
-                console.log('Authentication successful');
-                // Вызываем переданную функцию при успешной аутентификации
-                onLoginSuccess();
+                // Save user ID or authentication token to localStorage
+                localStorage.setItem('user_id', data.user_id);
+                console.log(data.user_id)
+
+                // Notify the parent component about the successful login
+                dispatch('loginSuccess', { user_id: data.user_id });
+                navigate('/glav');
             } else {
                 console.error('Incorrect username or password.');
             }
@@ -51,21 +54,34 @@
 </head>
 
 <body>
-    <h1>Survzila</h1>
-    <h1>Please</h1>
-    <form on:submit={handleSubmit}>
-        <label for="username">Name:</label>
-        <input type="text" id="username" name="username" bind:value={username} required /><br />
+    <div class="for-login">
+        <h1>Survzila</h1>
+        <h1>Please</h1>
+        <form on:submit={handleSubmit}>
+            <label for="username">Name:</label>
+            <input type="text" id="username" name="username" bind:value={username} required /><br />
 
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" bind:value={password} required /><br />
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" bind:value={password} required /><br />
 
-        <button type="submit">Sign in</button>
-    </form>
+            <button type="submit">Sign in</button>
+        </form>
+        <button class="for-fxod" on:click={() => (showModal = true)}>Register</button>
+                {#if showModal}
+                    <Register on:close={() => (showModal = false)} />
+                {/if}
+    </div>
 </body>
 
 
 <style>
+    .for-login {
+    text-align: center;
+    padding: 1em;
+    max-width: 240px;
+    margin: 0 auto;
+    }
+
     h1 {
 	color: #ff3e00;
 	text-transform: uppercase;

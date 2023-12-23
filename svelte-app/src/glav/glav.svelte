@@ -1,76 +1,57 @@
 <script>
-    import { onMount } from "svelte";
-    import { goto } from '$app/navigation';
     import { writable } from 'svelte/store';
+    import { createEventDispatcher } from "svelte";
 
-    let first_name = writable("");
-    let last_name = writable("");
-    let city = writable("");
-    let phone = writable("");
-    let post = writable("");
-    let vessel_name = writable("");
+    const dispatch = createEventDispatcher();
 
+    const first_name = writable('');
+    const last_name = writable('');
+    const city = writable('');
+    const phone = writable('');
+    const post = writable('');
+    const vessel_name = writable('');
     let projects = [];
-    let user_id;
 
-    onMount(async () => {
-        try {
-            const projectsResponse = await fetch('http://127.0.0.1:5000/index2', {
-            method: 'GET',
-            credentials: 'include',
+    const createProject = async (event) => {
+        event.preventDefault(); // Prevent the default form submission
+
+        const user_id = localStorage.getItem('user_id'); // Get user_id from localStorage
+
+        const response = await fetch('http://127.0.0.1:5000/index2', {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${user_id}`
             },
+            body: JSON.stringify({
+                user_id: user_id, // Include user_id in the request body
+                first_name: $first_name,
+                last_name: $last_name,
+                city: $city,
+                phone: $phone,
+                post: $post,
+                vessel_name: $vessel_name
+            }),
         });
 
-            if (projectsResponse.ok) {
-            const responseData = await projectsResponse.json();
-            projects = responseData.projects;
-            user_id = responseData.user_id;
-            console.log("User ID:", user_id);
-            console.log("Projects:", projects);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.status === 'success') {
+                // Notify the parent component about the successful project creation
+                dispatch('projectCreated', { project_id: data.project_id });
             } else {
-            const text = await projectsResponse.text();
-            console.error('Unexpected response:', text);
+                console.error('Failed to create project.');
             }
-        } catch (error) {
-            console.error('Error fetching projects:', error);
+        } else {
+            console.error('Failed to create project.');
         }
-        });
-
-    async function createProject() {
-        // Log user_id before making the request
-        console.log("User ID (Create Project):", user_id);
-
-        try {
-            const response = await fetch('http://127.0.0.1:5000/index2', {
-                method: 'POST',
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    first_name: $first_name,
-                    last_name: $last_name,
-                    city: $city,
-                    phone: $phone,
-                    post: $post,
-                    vessel_name: $vessel_name,
-                }),
-            });
-
-            if (response.ok) {
-                const newProject = await response.json();
-                projects = [...projects, newProject];
-            }
-        } catch (error) {
-            console.error('Error creating project:', error);
-        }
-    }
-
-    function goToEditProject(projectId) {
-        goto(`/edit_project/${projectId}`);
-    }
+    };
+    
+    const logout = () => {
+        localStorage.removeItem('user_id');
+        isLoggedIn = false;
+    };
+    
 </script>
 
 <style>
@@ -122,8 +103,8 @@ p,ul {
 
     <main>
         <h1>Survzilla</h1>
-        <a href="/logout" class="btn btn-danger">Выйти</a>
-        <form class="row g-3 needs-validation"  method="POST"  novalidate action="/index2">
+        <a on:click={logout} class="btn btn-danger">Выйти</a>
+        <form class="row g-3 needs-validation"  method="POST"  novalidate on:submit={createProject}>
                 <div class="col-md-4">
                     <label for="validationCustom01" class="form-label">First name</label>
                     <input type="text" class="form-control" id="validationCustom01"  name="first_name" bind:value={$first_name} required>
@@ -203,7 +184,7 @@ p,ul {
             {:else}
                 <p>У вас пока нет проектов.</p>
             {/if}
-
+            
             <button on:click={createProject}>Create a new Project</button>
             </ul>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm" crossorigin="anonymous"></script>

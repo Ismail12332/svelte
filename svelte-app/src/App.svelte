@@ -1,4 +1,5 @@
 <script>
+    import { Router, Route, Link } from "svelte-navigator";
 	import Glav from "./glav/glav.svelte";
 	import Login from "./Login.svelte";
 	import Register from "./Register.svelte";
@@ -6,28 +7,46 @@
 	import { onMount } from "svelte";
 
 	let showModal = false;
-	let isLoggedIn = false;
+	let isLoggedIn = localStorage.getItem('user_id'); // Check if the user is logged in
 
-	
+    // Function to handle user logout
+    const logout = () => {
+        localStorage.removeItem('user_id');
+        isLoggedIn = false;
+    };
+
+    // Event handler for successful login
+    const handleLoginSuccess = (event) => {
+        isLoggedIn = true;
+    };
 </script>
 
 <body>
+    <Router>
+        <Route path="/" component={Login} >
+            <button class="for-fxod" on:click={() => (showModal = true)}>Register</button>
+            {#if showModal}
+                <Register on:close={() => (showModal = false)} />
+            {/if}
+        </Route>
+        <Route path="/glav" component={Glav} />
+    </Router>
 	
 	<main>
 		{#if isLoggedIn}
-            <Glav/>
+            <div>
+                <Glav />
+                <button on:click={logout}>Logout</button>
+            </div>
         {:else}
-			<div class="for-login">
-				<Login onLoginSuccess={() => isLoggedIn = true}/>
-				<button class="for-fxod" on:click={() => (showModal = true)}>Register</button>
-				
-			</div>
+            <div class="for-login">
+                <Login on:loginSuccess={handleLoginSuccess} />
+                <button class="for-fxod" on:click={() => (showModal = true)}>Register</button>
+            </div>
         {/if}
-		{#if showModal}
-			<Register
-				on:close={() => (showModal = false)}
-			/>
-		{/if}
+        {#if showModal}
+            <Register on:close={() => (showModal = false)} />
+        {/if}
 	</main>
 	
 </body>
