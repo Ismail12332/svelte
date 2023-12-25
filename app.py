@@ -78,48 +78,62 @@ def create_app():
         return "Регистрация прошла успешно.", 200
 
 
-    @app.route("/index2", methods=["GET", "POST"])
-    def home(supports_credentials=True):
-        data = request.json  # Получаем данные из JSON-запроса
+    def convert_projects_to_list(projects):
+        #Converts MongoDB projects to a list with ObjectId converted to string.
+        projects_list = []
+        for project in projects:
+            project_data = {**project}
+            project_data["_id"] = str(project["_id"])
+            projects_list.append(project_data)
+        print(projects_list)
+        return projects_list
+    
+
+    @app.route("/index2", methods=["GET"])
+    def get_projects():
         user_id = request.args.get("user_id")
+        print(user_id)
+        projects = app.db.projects.find({"user_id": user_id})
+        projects_list = convert_projects_to_list(projects)
+        return jsonify({"status": "success", "user_id": str(user_id), "projects": projects_list})
+    
+
+    @app.route("/index2", methods=["POST"])
+    def create_project():
+        data = request.json  # Получаем данные из JSON-запроса
+        user_id = data.get("user_id")
+        print(user_id)
 
         # Обновляем запрос к базе данных, чтобы фильтровать проекты по user_id
         projects = app.db.projects.find({"user_id": user_id})
+        projects_list = convert_projects_to_list(projects)
 
-        if request.method == "POST":
-            user_id = data.get("user_id")
-            first_name = data.get("first_name")
-            last_name = data.get("last_name")
-            city = data.get("city")
-            phone = data.get("phone")
-            post = data.get("post")
-            vessel_name = data.get("vessel_name")
-            
-            
+        user_id = data.get("user_id")
+        first_name = data.get("first_name")
+        last_name = data.get("last_name")
+        city = data.get("city")
+        phone = data.get("phone")
+        post = data.get("post")
+        vessel_name = data.get("vessel_name")
 
-            # Создаем проект
-            project = {
-                "first_name": first_name,
-                "last_name": last_name,
-                "city": city,
-                "phone": phone,
-                "post": post,
-                "sections": [],
-                "vessel_name": vessel_name,
-                "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "user_id": user_id
-            }
+        # Создаем проект
+        project = {
+            "first_name": first_name,
+            "last_name": last_name,
+            "city": city,
+            "phone": phone,
+            "post": post,
+            "sections": [],
+            "vessel_name": vessel_name,
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "user_id": user_id
+        }
 
-            result = app.db.projects.insert_one(project)
-            project_id = result.inserted_id
+        result = app.db.projects.insert_one(project)
+        project_id = result.inserted_id
 
-            print("Entry added:", first_name, last_name, city, phone, post, vessel_name, user_id)
-            return jsonify({"status": "success", "user_id": str(user_id), "project_id": str(project_id)})
-        
-        # Преобразуем объекты projects в список для возврата на клиент
-        projects_list = list(projects)
-        print({"status": "success", "user_id": user_id, "projects": projects_list})
-        return jsonify({"status": "success", "user_id": str(user_id), "projects": projects_list})
+        print("Entry added:", first_name, last_name, city, phone, post, vessel_name, user_id, project_id, projects_list)
+        return jsonify({"status": "success", "user_id": str(user_id), "project_id": str(project_id)})
 
 
 

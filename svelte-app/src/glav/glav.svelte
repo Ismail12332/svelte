@@ -1,6 +1,8 @@
 <script>
     import { writable } from 'svelte/store';
     import { createEventDispatcher } from "svelte";
+    import { onMount } from 'svelte';
+    import { readable } from 'svelte/store';
 
     const dispatch = createEventDispatcher();
 
@@ -10,7 +12,8 @@
     const phone = writable('');
     const post = writable('');
     const vessel_name = writable('');
-    let projects = [];
+    
+    let projects = writable([]);
 
     const createProject = async (event) => {
         event.preventDefault(); // Prevent the default form submission
@@ -51,6 +54,35 @@
         localStorage.removeItem('user_id');
         isLoggedIn = false;
     };
+
+
+    const fetchProjects = async () => {
+        const user_id = localStorage.getItem('user_id');
+
+        // Send a GET request to fetch projects
+        const response = await fetch(`http://127.0.0.1:5000/index2?user_id=${user_id}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${user_id}`
+            },
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.status === 'success') {
+                // Set the projects store with the fetched projects
+                projects = readable(data.projects);
+            } else {
+                console.error('Failed to fetch projects.');
+            }
+        } else {
+            console.error('Failed to fetch projects.');
+        }
+    };
+
+    // Fetch projects when the component is mounted
+    onMount(fetchProjects);
     
 </script>
 
@@ -103,7 +135,7 @@ p,ul {
 
     <main>
         <h1>Survzilla</h1>
-        <a on:click={logout} class="btn btn-danger">Выйти</a>
+        <button on:click={logout} class="btn btn-danger">Выйти</button>
         <form class="row g-3 needs-validation"  method="POST"  novalidate on:submit={createProject}>
                 <div class="col-md-4">
                     <label for="validationCustom01" class="form-label">First name</label>
@@ -169,26 +201,21 @@ p,ul {
             <h2>Ваши проекты:</h2>
 
             <ul>
-            {#if projects.length > 0}
-                {#each projects as project (project._id)}
-                <li class="project-info">
-                    <a href="/edit_project/{project._id}" on:click={() => goToEditProject(project._id)}>Sign in</a>
-                    <strong>Name:</strong> {project.first_name} {project.last_name}<br>
-                    <strong>City: </strong> {project.city}<br>
-                    <strong>Phone: </strong> {project.phone}<br>
-                    <strong>Post: </strong> {project.post}<br>
-                    <strong>Time create: </strong> {project.created_at}<br>
-                    <p><strong>Vessel name: </strong> {project.vessel_name}</p>
-                </li>
-                {/each}
-            {:else}
-                <p>У вас пока нет проектов.</p>
-            {/if}
-            
-            <button on:click={createProject}>Create a new Project</button>
+                {#if $projects.length > 0}
+                    {#each $projects as project (project._id)}
+                        <li class="project-info">
+                            <a href="/edit_project/{project._id}" on:click={() => goToEditProject(project._id)}>Sign in</a>
+                            <strong>Name:</strong> {project.first_name} {project.last_name}<br>
+                            <strong>City: </strong> {project.city}<br>
+                            <strong>Phone: </strong> {project.phone}<br>
+                            <strong>Post: </strong> {project.post}<br>
+                            <strong>Time create: </strong> {project.created_at}<br>
+                            <p><strong>Vessel name: </strong> {project.vessel_name}</p>
+                        </li>
+                    {/each}
+                {:else}
+                    <p>У вас пока нет проектов.</p>
+                {/if}
             </ul>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm" crossorigin="anonymous"></script>
-    </main>       
-
-
-
+    </main>

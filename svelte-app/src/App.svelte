@@ -1,5 +1,5 @@
 <script>
-    import { Router, Route, Link } from "svelte-navigator";
+    import { Router, Route, Link, } from "svelte-navigator";
 	import Glav from "./glav/glav.svelte";
 	import Login from "./Login.svelte";
 	import Register from "./Register.svelte";
@@ -8,6 +8,10 @@
 
 	let showModal = false;
 	let isLoggedIn = localStorage.getItem('user_id'); // Check if the user is logged in
+    
+
+    
+
 
     // Function to handle user logout
     const logout = () => {
@@ -22,15 +26,6 @@
 </script>
 
 <body>
-    <Router>
-        <Route path="/" component={Login} >
-            <button class="for-fxod" on:click={() => (showModal = true)}>Register</button>
-            {#if showModal}
-                <Register on:close={() => (showModal = false)} />
-            {/if}
-        </Route>
-        <Route path="/glav" component={Glav} />
-    </Router>
 	
 	<main>
 		{#if isLoggedIn}
